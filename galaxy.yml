@@ -1,0 +1,15 @@
+namespace: community
+name: neo4j
+version: 1.0.0
+readme: README.md
+authors:
+- Aleksander Lech
+description: Collection allowing to interact with Neo4j Database
+license_file: LICENSE
+tags:
+  - neo4j
+dependencies: {}
+repository: https://github.com/aleksanderlech/ansible-neo4j
+documentation: https://github.com/aleksanderlech/ansible-neo4j
+homepage: https://github.com/aleksanderlech/ansible-neo4j
+issues: https://github.com/aleksanderlech/ansible-neo4j/issues
