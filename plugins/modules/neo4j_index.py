@@ -54,13 +54,6 @@ from ansible.module_utils.basic import *
 from ansible_collections.community.neo4j.plugins.module_utils.utils import Neo4jExecutor
 
 
-def index_exists(session, labels, properties):
-    for record in session.run(
-            "CALL db.indexes() YIELD name, labelsOrTypes, properties WHERE labelsOrTypes = $labels AND properties = $properties "
-            "RETURN COUNT(name) AS matchingCount", labels=[labels], properties=properties):
-        return record[0] == 1
-
-
 def main():
     # Define module
 

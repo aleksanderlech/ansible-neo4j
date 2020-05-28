@@ -57,19 +57,6 @@ from ansible.module_utils.basic import *
 from ansible_collections.community.neo4j.plugins.module_utils.utils import Neo4jExecutor
 
 
-def full_text_index_exists(session, name, labels, properties):
-    for record in session.run(
-            "CALL db.indexes() YIELD name, labelsOrTypes, properties WHERE name = $name "
-            "AND labelsOrTypes = $labels AND properties = $properties "
-            "RETURN COUNT(name) AS matchingCount", name=name, labels=labels, properties=properties):
-        return record[0] == 1
-
-
-def create_full_text_index(session, name, labels, properties):
-    session.run("CALL db.index.fulltext.createNodeIndex($name, $labels, $properties);",
-                name=name, labels=labels, properties=properties)
-
-
 def main():
     # Define module
 

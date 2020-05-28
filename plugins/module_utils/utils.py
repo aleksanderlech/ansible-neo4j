@@ -10,18 +10,6 @@ class Neo4jExecutor:
         with self.driver.session() as session:
             return query(session)
 
-    def execute_conditionally(self, check_query, query):
-        changed = False
-
-        with self.driver.session() as session:
-            exists = check_query(session)
-
-            if not exists:
-                query(session)
-                changed = True
-
-        return changed
-
     def index_exists(self, labels, properties, uniqueness, name=None, index_type="BTREE"):
         if name:
             name_match = "name = $name"
