@@ -1,11 +1,17 @@
 # Neo4j Collection
-<!-- Add CI and code coverage badges here. Samples included below. -->
+This collection helps to create indexes in Neo4j using Ansible.
 
-<!-- Describe the collection and why a user would want to use it. What does the collection do? -->
+## Tested with
 
-## Tested with Ansible
+- Ansible 2.9.7
+- Neo4 4.0.4
 
-- 2.9.7
+## Compatibility Matrix
+
+|Version |No4j|
+|-----|----------|
+|1.0.0|3.x       |
+|1.1.0 |4.x      |
 
 ## External requirements
 

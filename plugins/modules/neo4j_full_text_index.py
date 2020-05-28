@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.0.0',
+    'metadata_version': '1.1.0',
     'status': ['preview'],
     'supported_by': 'community'
 }
@@ -34,7 +34,10 @@ options:
         description:
             - Target Neo4j database user password
         required: "true"
-    neo4j_index_name:
+    neo4j_encryption:
+        description:
+           - Whether to enable secure Neo4j connection
+    index_name:
         description:
             - The full text index name that is to be checked/created
         required: "true"
@@ -56,8 +59,9 @@ from ansible_collections.community.neo4j.plugins.module_utils.utils import Neo4j
 
 def full_text_index_exists(session, name, labels, properties):
     for record in session.run(
-            "CALL db.indexes() YIELD indexName, tokenNames, properties WHERE indexName = $name AND tokenNames = $labels AND properties = $properties "
-            "RETURN COUNT(indexName) AS matchingCount", name=name, labels=labels, properties=properties):
+            "CALL db.indexes() YIELD name, labelsOrTypes, properties WHERE name = $name "
+            "AND labelsOrTypes = $labels AND properties = $properties "
+            "RETURN COUNT(name) AS matchingCount", name=name, labels=labels, properties=properties):
         return record[0] == 1
 
 
@@ -74,6 +78,7 @@ def main():
         neo4j_port=dict(type='int', default=7687),
         neo4j_user=dict(type='str', required=True),
         neo4j_password=dict(type='str', required=True, no_log=True),
+        neo4j_encryption=dict(type='bool', default=False),
         index_name=dict(type='str', required=True),
         index_labels=dict(type='list', required=True),
         index_properties=dict(type='list', required=True)
@@ -86,16 +91,22 @@ def main():
     neo4j_port = module.params['neo4j_port']
     neo4j_user = module.params['neo4j_user']
     neo4j_password = module.params['neo4j_password']
+    neo4j_encryption = module.params['neo4j_encryption']
     index_name = module.params['index_name']
     index_labels = module.params['index_labels']
     index_properties = module.params['index_properties']
 
-    executor = Neo4jExecutor(neo4j_host, neo4j_port, neo4j_user, neo4j_password)
+    executor = Neo4jExecutor(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_encryption)
 
-    changed = executor.execute_conditionally(
-        lambda session: full_text_index_exists(session, index_name, index_labels, index_properties),
-        lambda session: create_full_text_index(session, index_name, index_labels, index_properties)
-    )
+    if not executor.index_exists(index_labels, index_properties, "NONUNIQUE", index_name, "FULLTEXT"):
+        executor.execute(
+            lambda session: session.run("CALL db.index.fulltext.createNodeIndex($name, $labels, $properties);",
+                                        name=index_name,
+                                        labels=index_labels,
+                                        properties=index_properties))
+        changed = True
+    else:
+        changed = False
 
     executor.close()
     module.exit_json(changed=changed)

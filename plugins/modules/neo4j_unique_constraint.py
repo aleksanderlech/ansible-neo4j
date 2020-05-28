@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.0.0',
+    'metadata_version': '1.1.0',
     'status': ['preview'],
     'supported_by': 'community'
 }
@@ -34,7 +34,9 @@ options:
         description:
             - Target Neo4j database user password
         required: "true"
-    neo4j_index_name:
+    neo4j_encryption:
+        description:
+           - Whether to enable secure Neo4j connection
     constraint_label:
         description:
             - The constraint desired node label that it belongs to
@@ -43,6 +45,9 @@ options:
         description:
             - The constraint desired node properties to be unique
         required: "true"
+    neo4j_encryption:
+        description:
+           - Whether to enable secure Neo4j connection
 author:
     - Aleksander Lech (me@aleksander-lech.com)
 '''
@@ -59,6 +64,7 @@ def main():
         neo4j_port=dict(type='int', default=7687),
         neo4j_user=dict(type='str', required=True),
         neo4j_password=dict(type='str', required=True, no_log=True),
+        neo4j_encryption=dict(type='bool', default=False),
         constraint_label=dict(type='str', required=True),
         constraint_property=dict(type='str', required=True)
     )
@@ -70,17 +76,21 @@ def main():
     neo4j_port = module.params['neo4j_port']
     neo4j_user = module.params['neo4j_user']
     neo4j_password = module.params['neo4j_password']
+    neo4j_encryption = module.params['neo4j_encryption']
     constraint_label = module.params['constraint_label']
     constraint_property = module.params['constraint_property']
 
-    executor = Neo4jExecutor(neo4j_host, neo4j_port, neo4j_user, neo4j_password)
+    executor = Neo4jExecutor(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_encryption)
 
-    result = executor.execute(lambda session: session.run(f"CREATE CONSTRAINT ON (n:{constraint_label}) ASSERT  n.{constraint_property}  IS UNIQUE"))
-    added = result.summary().counters.constraints_added == 1
+    if not executor.index_exists([constraint_label], [constraint_property], "UNIQUE"):
+        executor.execute(lambda session: session.run(
+            f"CREATE CONSTRAINT ON (n:{constraint_label}) ASSERT  n.{constraint_property}  IS UNIQUE"))
+        changed = True
+    else:
+        changed = False
 
     executor.close()
-
-    module.exit_json(changed=added)
+    module.exit_json(changed=changed)
 
 
 if __name__ == '__main__':

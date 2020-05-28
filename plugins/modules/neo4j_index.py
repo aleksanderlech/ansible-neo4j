@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.0.0',
+    'metadata_version': '1.1.0',
     'status': ['preview'],
     'supported_by': 'community'
 }
@@ -34,7 +34,9 @@ options:
         description:
             - Target Neo4j database user password
         required: "true"
-    neo4j_index_name:
+    neo4j_encryption:
+        description:
+           - Whether to enable secure Neo4j connection
     index_label:
         description:
             - The index desired node label that should be included in the index
@@ -43,12 +45,20 @@ options:
         description:
             - The full text index desired node properties to be indexed
         required: "true"
+        
 author:
     - Aleksander Lech (me@aleksander-lech.com)
 '''
 
 from ansible.module_utils.basic import *
 from ansible_collections.community.neo4j.plugins.module_utils.utils import Neo4jExecutor
+
+
+def index_exists(session, labels, properties):
+    for record in session.run(
+            "CALL db.indexes() YIELD name, labelsOrTypes, properties WHERE labelsOrTypes = $labels AND properties = $properties "
+            "RETURN COUNT(name) AS matchingCount", labels=[labels], properties=properties):
+        return record[0] == 1
 
 
 def main():
@@ -59,6 +69,7 @@ def main():
         neo4j_port=dict(type='int', default=7687),
         neo4j_user=dict(type='str', required=True),
         neo4j_password=dict(type='str', required=True, no_log=True),
+        neo4j_encryption=dict(type='bool', default=False),
         index_label=dict(type='str', required=True),
         index_properties=dict(type='list', required=True)
     )
@@ -70,16 +81,20 @@ def main():
     neo4j_port = module.params['neo4j_port']
     neo4j_user = module.params['neo4j_user']
     neo4j_password = module.params['neo4j_password']
+    neo4j_encryption = module.params['neo4j_encryption']
     index_label = module.params['index_label']
     index_properties = module.params['index_properties']
 
-    executor = Neo4jExecutor(neo4j_host, neo4j_port, neo4j_user, neo4j_password)
+    executor = Neo4jExecutor(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_encryption)
 
-    result = executor.execute(lambda session: session.run(f"CREATE INDEX ON :{index_label}({','.join(index_properties)})"))
-    added = result.summary().counters.indexes_added == 1
+    if not executor.index_exists([index_label], index_properties, "NONUNIQUE"):
+        executor.execute(lambda session: session.run(f"CREATE INDEX ON :{index_label}({','.join(index_properties)})"))
+        changed = True
+    else:
+        changed = False
 
     executor.close()
-    module.exit_json(changed=added)
+    module.exit_json(changed=changed)
 
 
 if __name__ == '__main__':
