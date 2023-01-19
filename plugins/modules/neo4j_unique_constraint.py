@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1.0',
+    'metadata_version': '1.2.0',
     'status': ['preview'],
     'supported_by': 'community'
 }
@@ -82,9 +82,9 @@ def main():
 
     executor = Neo4jExecutor(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_encryption)
 
-    if not executor.index_exists([constraint_label], [constraint_property], "UNIQUE"):
+    if not executor.constraint_exists([constraint_label], [constraint_property]):
         executor.execute(lambda session: session.run(
-            f"CREATE CONSTRAINT ON (n:{constraint_label}) ASSERT  n.{constraint_property}  IS UNIQUE"))
+            f"CREATE CONSTRAINT FOR (n:{constraint_label}) REQUIRE n.{constraint_property} IS UNIQUE"))
         changed = True
     else:
         changed = False

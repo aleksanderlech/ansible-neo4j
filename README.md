@@ -3,15 +3,16 @@ This collection helps to create indexes in Neo4j using Ansible.
 
 ## Tested with
 
-- Ansible 2.9.7
-- Neo4 4.0.4
+- Ansible 2.9.7, 2.13.4
+- Neo4 4.0.4, 5.2, 5.3
 
 ## Compatibility Matrix
 
-|Version |No4j|
-|-----|----------|
-|1.0.0|3.x       |
-|1.1.0 |4.x      |
+| Version | No4j |
+|---------|------|
+| 1.0.0   | 3.x  |
+| 1.1.0   | 4.x  |
+| 1.2.0   | 5.x  |
 
 ## External requirements
 

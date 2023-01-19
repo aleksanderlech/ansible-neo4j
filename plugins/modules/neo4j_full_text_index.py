@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1.0',
+    'metadata_version': '1.2.0',
     'status': ['preview'],
     'supported_by': 'community'
 }
@@ -85,12 +85,9 @@ def main():
 
     executor = Neo4jExecutor(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_encryption)
 
-    if not executor.index_exists(index_labels, index_properties, "NONUNIQUE", index_name, "FULLTEXT"):
+    if not executor.index_exists(index_labels, index_properties, index_name, "FULLTEXT"):
         executor.execute(
-            lambda session: session.run("CALL db.index.fulltext.createNodeIndex($name, $labels, $properties);",
-                                        name=index_name,
-                                        labels=index_labels,
-                                        properties=index_properties))
+            lambda session: session.run(f"CREATE FULLTEXT INDEX {index_name} FOR (n:{'|'.join(index_labels)}) ON EACH [{','.join(map(lambda x: 'n.' + x, index_properties))}]"))
         changed = True
     else:
         changed = False

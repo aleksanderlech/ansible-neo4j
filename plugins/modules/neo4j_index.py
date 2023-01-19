@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1.0',
+    'metadata_version': '1.2.0',
     'status': ['preview'],
     'supported_by': 'community'
 }
@@ -80,8 +80,8 @@ def main():
 
     executor = Neo4jExecutor(neo4j_host, neo4j_port, neo4j_user, neo4j_password, neo4j_encryption)
 
-    if not executor.index_exists([index_label], index_properties, "NONUNIQUE"):
-        executor.execute(lambda session: session.run(f"CREATE INDEX ON :{index_label}({','.join(index_properties)})"))
+    if not executor.index_exists([index_label], index_properties, None, "RANGE"):
+        executor.execute(lambda session: session.run(f"CREATE INDEX FOR (n:{index_label}) ON ({','.join(map(lambda x: 'n.' + x, index_properties))})"))
         changed = True
     else:
         changed = False
